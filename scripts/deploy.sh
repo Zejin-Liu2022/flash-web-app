@@ -1,17 +1,21 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+
 revision="${1:?Expected the tested Git commit SHA}"
 [[ "$revision" =~ ^[0-9a-f]{40}$ ]] || { echo "Invalid commit SHA"; exit 1; }
 exec 9>/var/lock/flask-web-app-deploy.lock
 flock -w 120 9
 cd /root/flask-web-app
-git fetch --prune origin main
-git merge-base --is-ancestor "$revision" origin/main
+bundle="/tmp/flask-web-app-${revision}.bundle"
+trap 'rm -f "$bundle"' EXIT
+git fetch "$bundle" HEAD
+test "$(git rev-parse FETCH_HEAD)" = "$revision"
 git checkout --detach "$revision"
 .venv/bin/python -m pip install -r requirements.txt
 .venv/bin/python -m unittest discover -s tests -v
 supervisorctl restart flask-web-app
+
 
 for attempt in {1..20}; do
     if .venv/bin/python - <<'PY'
@@ -32,3 +36,4 @@ PY
 done
 supervisorctl tail flask-web-app
 exit 1
+
