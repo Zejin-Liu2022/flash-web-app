@@ -1,0 +1,11 @@
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+*.log
+.env
+*.pem
+id_rsa*
+touge_deploy_rsa*
+.DS_Store
