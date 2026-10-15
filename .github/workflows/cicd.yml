@@ -40,6 +40,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          fetch-depth: 0
           persist-credentials: false
       - name: Configure SSH
         env:
@@ -57,6 +58,11 @@ jobs:
         env:
           SERVER_IP: ${{ secrets.TOUGE_SERVER_IP }}
         run: |
+          git bundle create "$RUNNER_TEMP/flask-web-app.bundle" HEAD
+          scp -i ~/.ssh/touge_deploy -P 47263 \
+            -o BatchMode=yes -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes -o ConnectTimeout=20 \
+            "$RUNNER_TEMP/flask-web-app.bundle" "root@$SERVER_IP:/tmp/flask-web-app-${GITHUB_SHA}.bundle"
           ssh -i ~/.ssh/touge_deploy -p 47263 \
             -o BatchMode=yes -o IdentitiesOnly=yes \
             -o StrictHostKeyChecking=yes -o ConnectTimeout=20 \
